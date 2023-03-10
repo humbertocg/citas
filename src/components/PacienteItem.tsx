@@ -21,7 +21,6 @@ const PacienteItem = ({
   const [isDarkTheme, setIsDarkTheme] = useState(false);
   const theme = useColorScheme();
   //isDarkTheme = theme === 'dark';
-  console.log(isDarkTheme);
 
   useEffect(() => {
     setIsDarkTheme(theme === 'dark');
