@@ -8,28 +8,31 @@
  * @format
  */
 
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
   Text,
   GestureResponderEvent,
-  Alert,
   Pressable,
-  Modal,
-  View,
   FlatList,
+  useColorScheme,
+  Alert,
 } from 'react-native';
 
 import Formulario from './src/components/Formulario';
+import PacienteDetail from './src/components/PacienteDetail';
 import PacienteItem from './src/components/PacienteItem';
 import IPacienteInfo from './src/interfaces/IPacienteInfo';
 
 const App = () => {
-  const [visibleModal, setVisibleModal] = useState<boolean>(false);
+  const [isVisibleModal, setVisibleModal] = useState<boolean>(false);
   const [pacientes, setPacientes] = useState<IPacienteInfo[]>([]);
   const [pacienteSelected, setPacienteSelected] = useState<IPacienteInfo>();
-  const [isEditPaciente, setIsEditPaciente] = useState(false);
+  const [isVisibleDetailModal, setVisibleDetailModal] =
+    useState<boolean>(false);
+  const theme = useColorScheme();
+  const isDarkTheme = theme === 'dark';
   const veterinaria = 'Veterinaria';
   const titulo = 'Administrador de citas';
 
@@ -38,15 +41,15 @@ const App = () => {
   };
 
   const onDismissModal = () => {
-    setPacienteSelected(undefined);
-    setIsEditPaciente(false);
-    setVisibleModal(false);
+    setPacienteSelectedAndModalState(setVisibleModal, false, undefined);
+  };
+
+  const onDismissDetailModal = () => {
+    setPacienteSelectedAndModalState(setVisibleDetailModal, false, undefined);
   };
 
   const agregarOEditarPaciente = (paciente: IPacienteInfo, isEdit: boolean) => {
-    if (!isEdit) {
-      setPacientes([...pacientes, paciente]);
-    } else {
+    if (isEdit) {
       const filteredPacientes = pacientes.map(item => {
         if (item.id === paciente.id) {
           return {...paciente};
@@ -55,28 +58,56 @@ const App = () => {
       });
       setPacienteSelected(undefined);
       setPacientes(filteredPacientes);
-      setIsEditPaciente(false);
+    } else {
+      setPacientes([...pacientes, paciente]);
     }
   };
 
   const eliminarPaciente = (id: string) => {
-    const filteredPaciente = pacientes.filter(p => p.id !== id);
-    setPacientes(filteredPaciente);
+    Alert.alert(
+      '¿Desea eliminar cita?',
+      'una cita eliminada no se puede recuperar',
+      [
+        {text: 'cancelar'},
+        {
+          text: 'Si, elminar',
+          onPress: () => {
+            const filteredPaciente = pacientes.filter(p => p.id !== id);
+            setPacientes(filteredPaciente);
+          },
+        },
+      ],
+    );
+  };
+
+  const openDetails = (paciente: IPacienteInfo) => {
+    setPacienteSelectedAndModalState(setVisibleDetailModal, true, paciente);
   };
 
   const editarPaciente = (paciente: IPacienteInfo) => {
-    setPacienteSelected(paciente);
-    setIsEditPaciente(true);
-    setVisibleModal(true);
+    setPacienteSelectedAndModalState(setVisibleModal, true, paciente);
   };
 
-  /*useEffect(() => {
-    if (!visibleModal) {
-      setPacienteSelected(undefined);
-    }
-  }, [visibleModal]);*/
+  const setPacienteSelectedAndModalState = (
+    setStateModal: (value: React.SetStateAction<boolean>) => void,
+    isVisible: boolean,
+    paciente?: IPacienteInfo,
+  ) => {
+    setPacienteSelected(paciente);
+    setStateModal(isVisible);
+  };
 
-  //useEffect(() => {}, [pacientes]);
+  const setActionVisible = (id: string) => {
+    const filteredPacientes = pacientes.map(item => {
+      if (item.id === id) {
+        const pacienteModified = {...item};
+        pacienteModified.isActionsVisible = !pacienteModified.isActionsVisible;
+        return pacienteModified;
+      }
+      return item;
+    });
+    setPacientes(filteredPacientes);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -94,23 +125,43 @@ const App = () => {
           data={pacientes}
           keyExtractor={item => item.id}
           renderItem={item => (
-            <PacienteItem
-              paciente={item.item}
-              handlerEliminarItem={eliminarPaciente}
-              handleEditarItem={editarPaciente}
-            />
+            <Pressable
+              style={styles.container}
+              onLongPress={() => {
+                setActionVisible(item.item.id);
+              }}
+              onPress={() => {
+                openDetails(item.item);
+              }}>
+              <PacienteItem
+                paciente={item.item}
+                handlerEliminarItem={eliminarPaciente}
+                handleEditarItem={editarPaciente}
+                isActionsVisible={item.item.isActionsVisible}
+              />
+            </Pressable>
           )}
         />
       ) : (
         <Text style={styles.noPacientes}>No hay pacientes</Text>
       )}
-      <Formulario
-        isVisible={visibleModal}
-        isEdit={isEditPaciente}
-        pacienteEdit={pacienteSelected}
-        onDismissModal={onDismissModal}
-        agregarOEditarPaciente={agregarOEditarPaciente}
-      />
+
+      {isVisibleModal && (
+        <Formulario
+          isVisible={isVisibleModal}
+          pacienteEdit={pacienteSelected}
+          onDismissModal={onDismissModal}
+          agregarOEditarPaciente={agregarOEditarPaciente}
+        />
+      )}
+
+      {isVisibleDetailModal && (
+        <PacienteDetail
+          isVisible={isVisibleDetailModal}
+          pacienteInfo={pacienteSelected}
+          onDismissModal={onDismissDetailModal}
+        />
+      )}
     </SafeAreaView>
   );
 };

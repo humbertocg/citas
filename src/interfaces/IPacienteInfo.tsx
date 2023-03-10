@@ -6,6 +6,7 @@ interface IPacienteInfo {
   telefono: string;
   sintomas: string;
   fechaAlta: Date;
+  isActionsVisible: boolean;
 }
 
 export default IPacienteInfo;
