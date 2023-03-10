@@ -9,6 +9,7 @@ import {
   TextInput,
   ScrollView,
   Alert,
+  GestureResponderEvent,
 } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import uuid from 'react-native-uuid';
@@ -18,11 +19,10 @@ interface IProps {
   isVisible: boolean;
   onDismissModal: () => void;
   agregarOEditarPaciente: (paciente: IPacienteInfo, isEdit: boolean) => void;
-  isEdit: boolean;
   pacienteEdit?: IPacienteInfo;
 }
 
-const pacienteInit = {
+const pacienteInit: IPacienteInfo = {
   id: '',
   nombrePaciente: '',
   nombrePropietario: '',
@@ -30,13 +30,13 @@ const pacienteInit = {
   telefono: '',
   sintomas: '',
   fechaAlta: new Date(),
+  isActionsVisible: false,
 };
 
 const Formulario = ({
   isVisible,
   onDismissModal,
   agregarOEditarPaciente,
-  isEdit,
   pacienteEdit,
 }: PropsWithChildren<IProps>) => {
   const [pacienteInfo, setPacienteInfo] = useState<IPacienteInfo>(pacienteInit);
@@ -99,9 +99,9 @@ const Formulario = ({
     if (!valuesEmpty) {
       const paciente: IPacienteInfo = {
         ...pacienteInfo,
-        id: isEdit ? pacienteInfo.id : uuid.v4().toString(),
+        id: pacienteEdit !== undefined ? pacienteInfo.id : uuid.v4().toString(),
       };
-      agregarOEditarPaciente(paciente, isEdit);
+      agregarOEditarPaciente(paciente, pacienteEdit !== undefined);
       setPacienteInfo({...pacienteInit});
       onDismissModal();
     } else {
@@ -112,18 +112,19 @@ const Formulario = ({
   };
 
   useEffect(() => {
-    if (isVisible && !isEdit) {
+    if (isVisible && pacienteEdit === undefined) {
       setPacienteInfo({...pacienteInit, fechaAlta: new Date()});
-    } else if (isVisible && isEdit && pacienteEdit !== undefined) {
+    } else if (isVisible && pacienteEdit !== undefined) {
       setPacienteInfo({...pacienteEdit});
     }
-  }, [isVisible, isEdit, pacienteEdit]);
+  }, [isVisible, pacienteEdit]);
+
   return (
     <Modal animationType="slide" visible={isVisible}>
       <SafeAreaView style={styles.container}>
         <ScrollView>
           <Text style={styles.titulo}>
-            Nueva {''}
+            {pacienteEdit !== undefined ? 'Editar' : 'Nueva'} {''}
             <Text style={styles.tituloBold}>Cita</Text>
           </Text>
 
@@ -206,10 +207,19 @@ const Formulario = ({
           </View>
 
           <Pressable
-            style={isEdit ? styles.btnEditar : styles.btnAgregar}
+            style={
+              pacienteEdit !== undefined ? styles.btnEditar : styles.btnAgregar
+            }
             onPress={onAgregarOEditarPaciente}>
-            <Text style={isEdit ? styles.btnEditarText : styles.btnAgregarText}>
-              {isEdit ? 'Editar Paciente' : 'Agregar Paciente'}
+            <Text
+              style={
+                pacienteEdit !== undefined
+                  ? styles.btnEditarText
+                  : styles.btnAgregarText
+              }>
+              {pacienteEdit !== undefined
+                ? 'Editar Paciente'
+                : 'Agregar Paciente'}
             </Text>
           </Pressable>
         </ScrollView>
