@@ -1,4 +1,4 @@
-export const formatearFecha = (fecha: Date) => {
+export const formatearFecha = (fecha: Date | string) => {
   const nuevaFecha = new Date(fecha);
   const options: Intl.DateTimeFormatOptions = {
     weekday: 'long',

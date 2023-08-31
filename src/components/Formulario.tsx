@@ -187,7 +187,7 @@ const Formulario = ({
             <Text style={styles.label}>Fecha Alta</Text>
             <View style={styles.fechaContenedor}>
               <DatePicker
-                date={pacienteInfo.fechaAlta}
+                date={new Date(pacienteInfo.fechaAlta)}
                 onDateChange={onDateChange}
               />
             </View>

@@ -8,7 +8,7 @@
  * @format
  */
 
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -24,6 +24,8 @@ import Formulario from './src/components/Formulario';
 import PacienteDetail from './src/components/PacienteDetail';
 import PacienteItem from './src/components/PacienteItem';
 import IPacienteInfo from './src/interfaces/IPacienteInfo';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {patientsStorageKey} from './src/utils/constants';
 
 const App = () => {
   const [isVisibleModal, setVisibleModal] = useState<boolean>(false);
@@ -48,7 +50,10 @@ const App = () => {
     setPacienteSelectedAndModalState(setVisibleDetailModal, false, undefined);
   };
 
-  const agregarOEditarPaciente = (paciente: IPacienteInfo, isEdit: boolean) => {
+  const agregarOEditarPaciente = async (
+    paciente: IPacienteInfo,
+    isEdit: boolean,
+  ) => {
     if (isEdit) {
       const filteredPacientes = pacientes.map(item => {
         if (item.id === paciente.id) {
@@ -58,8 +63,10 @@ const App = () => {
       });
       setPacienteSelected(undefined);
       setPacientes(filteredPacientes);
+      saveDataOnStorage(JSON.stringify(filteredPacientes));
     } else {
       setPacientes([...pacientes, paciente]);
+      saveDataOnStorage(JSON.stringify([...pacientes, paciente]));
     }
   };
 
@@ -74,6 +81,7 @@ const App = () => {
           onPress: () => {
             const filteredPaciente = pacientes.filter(p => p.id !== id);
             setPacientes(filteredPaciente);
+            saveDataOnStorage(JSON.stringify(filteredPaciente));
           },
         },
       ],
@@ -108,6 +116,22 @@ const App = () => {
     });
     setPacientes(filteredPacientes);
   };
+
+  const saveDataOnStorage = async (data: string) => {
+    await AsyncStorage.setItem(patientsStorageKey, data);
+  };
+
+  useEffect(() => {
+    const getPacientesFromStorage = async () => {
+      const pacientesStorage = await AsyncStorage.getItem('pacientes');
+      if (pacientesStorage) {
+        const pacientesConv = JSON.parse(pacientesStorage);
+        setPacientes(pacientesConv);
+      }
+    };
+
+    getPacientesFromStorage();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
